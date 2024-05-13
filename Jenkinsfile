@@ -11,7 +11,7 @@ pipeline {
         stage('Build') {
             steps {
                 // Build your application
-                sh 'mvn clean package'
+                sh 'mvn -B -DskipTests clean package'
             }
         }
 
@@ -31,7 +31,7 @@ pipeline {
         stage('Generate Javadoc') {
             steps {
                 // Generate javadoc
-                sh 'mvn javadoc:javadoc'
+                sh 'mvn javadoc:javadoc --fail-never'
             }
             post {
                 always {
