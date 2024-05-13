@@ -1,54 +1,36 @@
 pipeline {
     agent any
     stages {
-        stage('Checkout') {
-            steps {
-                // Checkout the code from a version control system
-                checkout scm
-            }
-        }
-        
         stage('Build') {
             steps {
-                // Build your application
                 sh 'mvn -B -DskipTests clean package'
             }
         }
-
-        stage('Test') {
-            steps {
-                // Run tests and generate the sure-fire report
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    // Archive the sure-fire reports
-                    archiveArtifacts artifacts: '**/target/surefire-reports/*.xml', fingerprint: true
-                }
-            }
-        }
-
         stage('Generate Javadoc') {
             steps {
-                // Generate javadoc
-                sh 'mvn javadoc:javadoc --fail-never'
-            }
-            post {
-                always {
-                    // Archive the javadoc
-                    archiveArtifacts artifacts: '**/target/site/apidocs/**/*', fingerprint: true
-                }
+                sh 'mvn javadoc:jar --fail-never'
             }
         }
+         stage('pmd') {
+             steps {
+             sh 'mvn pmd:pmd'
+             }
+         }
+        stage('Test') {
+            steps {
+                sh 'mvn test --fail-never'
+                sh 'mvn surefire-report:report'
+            }
+        }
+
     }
-    
     post {
-        // Email notifications, cleanup, or other steps could be added here
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
+        always {
+            archiveArtifacts artifacts: '**/target/site/**', fingerprint: true
+             archiveArtifacts artifacts: '**/target/**/*.jar', fingerprint: true
+             archiveArtifacts artifacts: '**/target/**/*.war', fingerprint: true
+            archiveArtifacts artifacts: 'target/surefire-reports/*', fingerprint: true
+            archiveArtifacts artifacts: 'target/javadoc.jar', fingerprint: true
         }
     }
 }
